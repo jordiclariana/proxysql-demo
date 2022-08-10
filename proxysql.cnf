@@ -1,0 +1,191 @@
+datadir="/var/lib/proxysql"
+## https://proxysql.com/documentation/global-variables/admin-variables
+admin_variables=
+{
+  admin_credentials="admin:admin;radmin:radmin"
+  stats_credentials="stats:stats"
+  # Interfaces on which the admin interface should listen
+  mysql_ifaces="0.0.0.0:6032"
+  # HTTP web server from where it is possible to gather certain metrics
+  web_enabled=true
+  # Restapi endpoint feature allows users to create new RESTAPI endpoints and execute scripts on behalf of ProxySQL
+  # Enabled as it also holds /metrics endpoint (embedded Prometheus exporter)
+  restapi_enabled=true
+  restapi_port=6070
+  # Internal interval in which memory metrics are going to be collected
+  prometheus_memory_metrics_interval=60
+}
+
+## https://proxysql.com/documentation/global-variables/mysql-variables
+mysql_variables=
+{
+  # Protection against auto_increment race conditions. Higher than 0 disables multiplexing
+  auto_increment_delay_multiplex=0
+  # Enable per-command (type of SQL query) MySQL query statistics
+  commands_stats="true"
+  # The number of times for which a reconnect should be attempted in case of an error, timeout,
+  # or any other event that led to an unsuccessful connection to a backend MySQL server
+  connect_retries_on_failure=10
+  # The timeout for a single attempt at connecting to a backend server from proxysql
+  connect_timeout_server=3000
+  # Modifies multiplex behavior, and instead of return the backend connection immediately to the connection pool,
+  # it will keep multiplexing disabled for a short period of time on a connection.
+  connection_delay_multiplex_ms=0
+  default_charset="utf8mb4"
+  default_collation_connection="utf8mb4_unicode_ci"
+  # This variable allows to create a simple throttling mechanism, delaying the execution of queries to the backends
+  default_query_delay=0
+  # When the timeout is reached, ProxySQL spawn a separate thread that connect to the backend
+  # and runs a KILL query in order to stop the query from running in the backend
+  default_query_timeout=36000000 # 10h
+  # When no "USE <database>" is used the default will be `ankorstore`
+  default_schema="demo"
+  # Interfaces for incoming MySQL traffic
+  interfaces="0.0.0.0:3306;0.0.0.0:3307"
+  # Whether to log not graceful disconnections. Can produce annoying log
+  log_unhealthy_connections="false"
+  # The maximum number of client connections that the proxy can handle
+  max_connections=3000
+  ## https://proxysql.com/documentation/global-variables/mysql-monitor-variables
+  # The interval in milliseconds at which the Monitor module of the proxy will try to connect to all the MySQL servers
+  # in order to check whether they are available or not
+  monitor_connect_interval=60000
+  # Connection timeout in milliseconds
+  monitor_connect_timeout=1200
+  # Whether to enable or not the monitor
+  monitor_enabled="true"
+  # The duration for which the events for the checks made by the Monitor module are kept
+  monitor_history=600000
+  monitor_username="root"
+  monitor_password="root"
+  # The interval at which the Monitor module should ping the backend servers by using the mysql_ping API
+  monitor_ping_interval=10000
+  monitor_ping_timeout=1000
+  monitor_ping_max_failures=3
+  # Defines the frequency to check the Read Only status of a backend server (in milliseconds)
+  monitor_read_only_interval=1500
+  monitor_read_only_timeout=1000
+  # Defines the count at which a server is going to be SHUNNED due to replication lag if it’s currently found
+  # replication lag exceeds the specified max_replication_lag for the server
+  monitor_replication_lag_count=1
+  monitor_replication_lag_interval=1000
+  monitor_replication_lag_timeout=1000
+  # Ping backend connections to keep them alive regardless of their traffic
+  ping_interval_server_msec=120000
+  ping_timeout_server=500
+  # The minimal timeout used by the proxy in order to detect incoming/outgoing traffic via the poll() system call
+  poll_timeout=2000
+  # Defines if an idle session should be listed in SHOW PROCESSLIST
+  session_idle_show_processlist="true"
+  # This variable controls whether sessions should be processed in the order of waiting time,
+  # in order to have a more balanced distribution of traffic among sessions
+  sessions_sort="true"
+  # The number of connection errors tolerated to the same server within an interval of 1 second until it is automatically shunned temporarily
+  shun_on_failures=1000000
+  # The stack size to be used with the background threads that the proxy uses to handle MySQL traffic and connect to the backends
+  stacksize=1048576
+  # The number of background threads that ProxySQL uses in order to process MySQL traffic
+  # Note: A restart of ProxySQL is needed to change this value
+  threads=4
+  # When active ProxySQL will send KeepAlive signal during the client open session
+  use_tcp_keepalive="true"
+  # ProxySQL will start sending KeepAlive to the destination after the connection has been idle for tcp_keepalive_time seconds
+  tcp_keepalive_time=60
+  # Kill MySQL client <-> ProxySQL session after being idle this amount of time
+  wait_timeout=28800000
+}
+
+## https://proxysql.com/documentation/main-runtime/#mysql_users
+mysql_users=
+(
+  {
+    username="demouser"
+    password="demopass"
+    # If there is no matching rule for the queries sent by this user, the traffic it generates is sent to the specified hostgroup
+    default_hostgroup=0
+    active=1
+    # used for authenticating to the mysqld servers against any hostgroup
+    backend=1
+    # used for authenticating to the ProxySQL instance
+    frontend=1
+    # Allow more connections than the global value since we currently use more the
+    # primary than the replicas
+    max_connections=15000
+  }
+)
+
+## https://proxysql.com/documentation/main-runtime/#mysql_query_rules
+mysql_query_rules=
+(
+  {
+    # The unique id of the rule. Rules are processed in rule_id order
+    rule_id=100
+    active=1
+    # Match incoming traffic on a specific local port
+    proxy_port=3306
+    # Route matched queries to this hostgroup
+    destination_hostgroup=0
+    # Wheter enable multiplexing or not (overwritting global value)
+    multiplex=1
+    # When set to 1 no further queries will be evaluated after this rule is matched and processed
+    apply=1
+  },
+  {
+    rule_id=101
+    active=1
+    proxy_port=3307
+    destination_hostgroup=1
+    apply=1
+  },
+)
+
+## https://proxysql.com/documentation/main-runtime/#mysql_replication_hostgroups
+# Defines replication hostgroups for use with traditional master / slave ASYNC or SEMI-SYNC replication
+mysql_replication_hostgroups=
+(
+  {
+    # The hostgroup where writers are configured. Nodes that have a read only check returning 0 will be assigned to this hostgroup
+    writer_hostgroup="0"
+  },
+  {
+    # The hostgroup where readers are configured. Read traffic should be sent to this hostgroup,
+    # assuming query rules or a separate read only user is defined to route traffic to this hostgroup.
+    # Nodes that have a read only check returning 1 will be assigned to this hostgroup
+    reader_hostgroup="1"
+  },
+)
+
+# https://proxysql.com/documentation/main-runtime/#mysql_servers
+mysql_servers =
+(
+  {
+    address="mysql-primary"
+    hostgroup=0
+    max_connections=200
+    status="ONLINE"
+  },
+  {
+    address="mysql-primary"
+    hostgroup=1
+    weight=1
+    comment="Replicas failover (takes over when all replicas are down)"
+    max_connections=200
+    status="ONLINE"
+  },
+  {
+    address="mysql-replica-1"
+    hostgroup=1
+    max_replication_lag=1
+    weight=10000
+    max_connections=200
+    status="ONLINE"
+  },
+  {
+    address="mysql-replica-2"
+    hostgroup=1
+    max_replication_lag=1
+    weight=10000
+    max_connections=200
+    status="ONLINE"
+  },
+)

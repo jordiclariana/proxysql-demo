@@ -1,0 +1,53 @@
+---
+
+services:
+  proxysql:
+    image: proxysql/proxysql:2.4.2
+    # command: ["proxysql", "-f", "--idle-threads", "-D", "/var/lib/proxysql", "--initial"]
+    user: "${DC_UID}:${DC_GID}"
+    container_name: proxysql
+    volumes:
+      - ./proxysql.cnf:/etc/proxysql.cnf
+      - ./proxysql:/var/lib/proxysql
+    ports:
+      - 6032:6032
+      - 6070:6070
+      - 3306:3306
+      - 3307:3307
+  mysql-primary:
+    image: mysql:5.7
+    container_name: primary
+    ports:
+      - 3316:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo
+      MYSQL_USER: demouser
+      MYSQL_PASSWORD: demopass
+    volumes:
+      - ./mysql-primary.cnf:/etc/mysql/mysql.conf.d/mysql-primary.cnf
+  mysql-replica-1:
+    image: mysql:5.7
+    container_name: replica1
+    ports:
+      - 3317:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo
+      MYSQL_USER: demouser
+      MYSQL_PASSWORD: demopass
+    volumes:
+      - ./mysql-replica-1.cnf:/etc/mysql/mysql.conf.d/mysql-replica-1.cnf
+  mysql-replica-2:
+    image: mysql:5.7
+    container_name: replica2
+    ports:
+      - 3318:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo
+      MYSQL_USER: demouser
+      MYSQL_PASSWORD: demopass
+    volumes:
+      - ./mysql-replica-2.cnf:/etc/mysql/mysql.conf.d/mysql-replica-2.cnf
+
