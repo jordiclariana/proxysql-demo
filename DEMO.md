@@ -61,9 +61,8 @@ mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE 
 # Demonstrate replication is working
 
 ```
-mysql --defaults-file=.my_replica1.cnf demo -e 'SELECT postalCode FROM customers WHERE customerNumber=103'
-mysql --defaults-file=.my_primary.cnf demo -e 'UPDATE customers SET postalCode=44001 WHERE customerNumber=103'
-mysql --defaults-file=.my_replica1.cnf demo -e 'SELECT postalCode FROM customers WHERE customerNumber=103'
+watch -n0.1 "mysql --defaults-file=.my_proxysql_replicas.cnf demo -e 'SELECT postalCode FROM customers WHERE customerNumber=103'"
+mysql --defaults-file=.my_proxysql_primary.cnf demo -e 'UPDATE customers SET postalCode=44001 WHERE customerNumber=103'
 ```
 
 # Show monitoring
@@ -88,17 +87,18 @@ mysql --defaults-file=.my_replica1.cnf -e 'START SLAVE'
 
 ```
 watch -n1 "mysql --defaults-file=.my_proxysql.cnf -e 'SELECT * FROM runtime_mysql_servers WHERE hostname='\''mysql-replica-1'\'''\\\\G"
+watch -n0.1 "mysql --defaults-file=.my_proxysql_replicas.cnf demo -e 'SELECT postalCode FROM customers WHERE customerNumber=103'"
 mysql --defaults-file=.my_replica1.cnf demo
 ```
 
 On replica session:
 ```
-	LOCK TABLE customers READ;
-	SELECT postalCode FROM customers WHERE customerNumber=103;
-	-- Run update on primary:
-	--   mysql --defaults-file=.my_primary.cnf demo -e 'UPDATE customers SET postalCode=44002 WHERE customerNumber=103'
-	SHOW SLAVE STATUS\G
-	UNLOCK TABLE;
-	SELECT postalCode FROM customers WHERE customerNumber=103;
+LOCK TABLE customers READ;
+SELECT postalCode FROM customers WHERE customerNumber=103;
+-- Run update on primary:
+--   mysql --defaults-file=.my_proxysql_primary.cnf demo -e 'UPDATE customers SET postalCode=44002 WHERE customerNumber=103'
+SHOW SLAVE STATUS\G
+SELECT postalCode FROM customers WHERE customerNumber=103;
+UNLOCK TABLE;
+SELECT postalCode FROM customers WHERE customerNumber=103;
 ```
-
