@@ -3,8 +3,8 @@
 ## Change config file:
 
 ```
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 Edit `proxysql.cnf`: change max_connections to 4000
@@ -17,16 +17,16 @@ sed 's/max_connections=3000/max_connections=4000/' /etc/proxysql.cnf > /tmp/prox
 ## Check if value changed (it did not):
 
 ```
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 ## Apply change to:
 
 ```
 mysql --defaults-file=.my_proxysql.cnf -e "LOAD MYSQL VARIABLES FROM CONFIG"
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 Only applied on memory
@@ -35,16 +35,16 @@ Only applied on memory
 
 ```
 mysql --defaults-file=.my_proxysql.cnf -e "LOAD MYSQL VARIABLES FROM MEMORY"
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 ## Restart proxysql:
 
 ```
 docker-compose restart proxysql
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 Changes are not there
@@ -54,8 +54,8 @@ Changes are not there
 ```
 mysql --defaults-file=.my_proxysql.cnf -e "LOAD MYSQL VARIABLES FROM CONFIG; SAVE MYSQL VARIABLES TO DISK"
 docker-compose restart proxysql
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
-mysql --defaults-file=.my_proxysql.cnf -e "SELECT * FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as RUNTIME_var, variable_value FROM runtime_global_variables WHERE variable_name='mysql-max_connections'" # Runtime
+mysql --defaults-file=.my_proxysql.cnf -e "SELECT variable_name as MEMORY_var, variable_value FROM global_variables WHERE variable_name='mysql-max_connections'" # Memory
 ```
 
 # Demonstrate replication is working
