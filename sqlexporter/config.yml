@@ -1,0 +1,38 @@
+---
+jobs:
+- name: "mysql_queries_per_user"
+  interval: '1s'
+  connections:
+    - 'mysql://root:root@tcp(primary:3306)/performance_schema'
+    - 'mysql://root:root@tcp(replica1:3306)/performance_schema'
+    - 'mysql://root:root@tcp(replica2:3306)/performance_schema'
+  queries:
+  - name: "queries_per_user"
+    help: "Total of executed queries per user"
+    labels:
+      - "username"
+    values:
+      - "count"
+    query:  |
+        SELECT USER as username, VARIABLE_VALUE as count
+        FROM performance_schema.status_by_user
+        WHERE
+          variable_name = "Questions"
+          AND user IS NOT NULL
+    allow_zero_rows: false
+- name: "proxysql_queries_per_user"
+  interval: '1s'
+  connections:
+    - 'mysql://radmin:radmin@tcp(proxysql:6032)/'
+  queries:
+  - name: "queries_per_user"
+    help: "Total of executed queries per user"
+    labels:
+      - "username"
+    values:
+      - "count"
+    query: |
+         SELECT username, sum(count_star) as count
+         FROM stats_mysql_query_digest
+         GROUP BY username
+    allow_zero_rows: false

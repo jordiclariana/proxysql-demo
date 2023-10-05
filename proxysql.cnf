@@ -99,8 +99,36 @@ mysql_variables=
 mysql_users=
 (
   {
-    username="demouser"
-    password="demopass"
+    username="demouser1"
+    password="demopass1"
+    # If there is no matching rule for the queries sent by this user, the traffic it generates is sent to the specified hostgroup
+    default_hostgroup=0
+    active=1
+    # used for authenticating to the mysqld servers against any hostgroup
+    backend=1
+    # used for authenticating to the ProxySQL instance
+    frontend=1
+    # Allow more connections than the global value since we currently use more the
+    # primary than the replicas
+    max_connections=15000
+  },
+  {
+    username="demouser2"
+    password="demopass2"
+    # If there is no matching rule for the queries sent by this user, the traffic it generates is sent to the specified hostgroup
+    default_hostgroup=0
+    active=1
+    # used for authenticating to the mysqld servers against any hostgroup
+    backend=1
+    # used for authenticating to the ProxySQL instance
+    frontend=1
+    # Allow more connections than the global value since we currently use more the
+    # primary than the replicas
+    max_connections=15000
+  },
+  {
+    username="demouser3"
+    password="demopass3"
     # If there is no matching rule for the queries sent by this user, the traffic it generates is sent to the specified hostgroup
     default_hostgroup=0
     active=1

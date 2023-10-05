@@ -17,6 +17,9 @@ services:
   mysql-primary:
     image: mysql:5.7
     container_name: primary
+    command:
+      - --general-log
+      - --general-log-file=/tmp/general.log
     ports:
       - 3316:3306
     environment:
@@ -29,6 +32,9 @@ services:
   mysql-replica-1:
     image: mysql:5.7
     container_name: replica1
+    command:
+      - --general-log
+      - --general-log-file=/tmp/general.log
     ports:
       - 3317:3306
     environment:
@@ -41,6 +47,9 @@ services:
   mysql-replica-2:
     image: mysql:5.7
     container_name: replica2
+    command:
+      - --general-log
+      - --general-log-file=/tmp/general.log
     ports:
       - 3318:3306
     environment:
@@ -51,3 +60,12 @@ services:
     volumes:
       - ./mysql-replica-2.cnf:/etc/mysql/mysql.conf.d/mysql-replica-2.cnf
 
+  sql_exporter:
+    image: ghcr.io/justwatchcom/sql_exporter
+    container_name: sqlexporter
+    volumes:
+      - ./sqlexporter/config.yml:/config/config.yml
+    environment:
+      CONFIG: /config/config.yml
+    ports:
+      - 9237:9237

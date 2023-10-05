@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
+#set -x
 
 MYSQL=(mysql --defaults-file=.my_primary.cnf)
 DC_UID=$(id -u)
 DC_GID=$(id -g)
 
-DC_GID=$DC_GID DC_UID=$DC_UID docker-compose rm -s -f
+DC_GID=$DC_GID DC_UID=$DC_UID docker-compose down
 rm -fr proxysql/*
 sleep 1
 DC_GID=$DC_GID DC_UID=$DC_UID docker-compose up -d
@@ -30,19 +30,39 @@ for i in .my_replica1.cnf .my_replica2.cnf; do
   mysql --defaults-file="$i" -e "SHOW SLAVE STATUS\G" 2>/dev/null
 done
 
+for user in 1 2 3; do
+  "${MYSQL[@]}" -e "CREATE USER IF NOT EXISTS 'demouser${user}'@'%' IDENTIFIED BY 'demopass${user}'"
+  "${MYSQL[@]}" -e "GRANT ALL ON *.* TO 'demouser${user}'@'%'"
+done
+
 "${MYSQL[@]}" demo < mysqlsampledatabase.sql 2>/dev/null
 
 cat << EOF
 All ready!
 
-Primary:
-mysql --defaults-file=.my_primary.cnf
-Replica 1:
-mysql --defaults-file=.my_replica1.cnf
-Replica 2:
-mysql --defaults-file=.my_replica2.cnf
+MySQL:
+  - Primary:
+      mysql --defaults-file=.my_primary.cnf
+  - Replica 1:
+      mysql --defaults-file=.my_replica1.cnf
+  - Replica 2:
+      mysql --defaults-file=.my_replica2.cnf
 
 ProxySQL:
-mysql -u radmin -pradmin -h127.0.0.1 -P6032
-curl http://127.0.0.1:6070/metrics
+  - Admin:
+      mysql --defaults-file=.my_proxysql.cnf
+  - Primary through ProxySQL:
+      mysql --defaults-file=.my_proxysql_primary_demouser1.cnf
+      mysql --defaults-file=.my_proxysql_primary_demouser2.cnf
+      mysql --defaults-file=.my_proxysql_primary_demouser3.cnf
+  - Replicas through ProxySQL:
+      mysql --defaults-file=.my_proxysql_replicas_demouser1.cnf
+      mysql --defaults-file=.my_proxysql_replicas_demouser1.cnf
+      mysql --defaults-file=.my_proxysql_replicas_demouser1.cnf
+  - Metrics:
+      curl -s http://127.0.0.1:6070/metrics
+
+SQL Exporter:
+  - Metrics:
+      curl -s  http://127.0.0.1:9237/metrics
 EOF
